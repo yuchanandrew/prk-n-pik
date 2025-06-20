@@ -1,4 +1,30 @@
+@import "tailwindcss";
+
 :root {
+  background-color: #F7C98D;
+  font-family: monospace;
+}
+
+@layer components {
+  .heading {
+    @apply text-3xl font-semibold;
+  }
+  .subheading {
+    @apply text-xl font-bold;
+  }
+  .navbar-text {
+    @apply text-2xl py-6 px-2 font-semibold hover:bg-amber-600 hover:text-black text-center;
+  }
+}
+
+@theme {
+  --color-primary: '#59E49B';
+  --color-secondary: '#51D6FF';
+  --color-neutral: '#6F584B';
+  --color-danger: '#F6828C';
+}
+
+/* :root {
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
@@ -65,4 +91,4 @@ button:focus-visible {
   button {
     background-color: #f9f9f9;
   }
-}
+} */
