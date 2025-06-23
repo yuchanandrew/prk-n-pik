@@ -6,7 +6,7 @@ interface ProductCardProps {
 
 const ProductCard = ({ name, price, available }: ProductCardProps) => {
   return (
-    <div className="flex flex-col shadow-lg rounded bg-gray-200 space-y-6 w-full justify-center p-2 hover-general">
+    <div className="flex flex-col shadow-lg rounded bg-gray-200 space-y-6 w-3/4 justify-center p-2 hover-general">
       <div>
         <h2 className="text-center">{name}</h2>
       </div>

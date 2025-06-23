@@ -20,5 +20,14 @@ app.get('/get-inventory', (req, res) => {
         .catch(err => console.error(err));
 });
 
+
+// TO-DO: Develop a dynamic item filtering function
+
+// app.get(`/filter-inventory/${options.data.elements.}`, (req, res) => {
+
+// })
+
+// TO-DO: Create a backend pagination function
+
 const PORT = process.env.PORT;
 app.listen(PORT, () => console.log('Server running on port 3000.'));
