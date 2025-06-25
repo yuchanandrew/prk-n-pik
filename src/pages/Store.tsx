@@ -22,29 +22,34 @@ interface InventoryItem {
 
 const Store = () => {
   const [items, setItems] = useState<InventoryItem[]>([]);
+  // const [selected, setSelected] = useState("");
 
-  useEffect(() => {
-    const fetchInventory = async () => {
-      try {
-        const response = await axios.get("http://localhost:3000/get-inventory");
-        setItems(response.data);
+  const handleFilter = async (filter: string) => {
+    try {
+      let url = "http://localhost:3000/inventory";
 
-        console.log("Response:", response);
-      } catch (error) {
-        console.log("Error while fetching inventory:", error);
+      if (filter) {
+        url += `?categories_filter=${filter.toLowerCase()}`;
       }
-    };
 
-    fetchInventory();
-    console.log("items:", items);
-  }, []);
+      console.log("filtered url:", url);
+
+      const response = await fetch(url);
+      const data = await response.json();
+      setItems(data.ret_arr);
+
+      console.log("Response data:", data.ret_arr);
+    } catch (error) {
+      console.log("Error while fetching inventory:", error);
+    }
+  };
 
   return (
     <div className="flex flex-col justify-center">
       <h2 className="heading text-center">Storefront</h2>
       <div className="flex min-h-screen justify-center">
         <div className="flex w-1/4 bg-gray-200 justify-center">
-          <CategoryFilter />
+          <CategoryFilter onFilterChange={handleFilter} />
         </div>
         <div className="subheading grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 w-3/4 h-full px-5 py-8 place-items-center-safe">
           {items.map((item) => (

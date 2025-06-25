@@ -20,12 +20,54 @@ app.get('/get-inventory', (req, res) => {
         .catch(err => console.error(err));
 });
 
+app.get('/inventory', async (req, res) => {
+    try {
+        // Get all filter parameters from search query
+        const { categories_filter, price_start_filter, price_end_filter, available_filter } = req.query;
+        
+        // Safeguard all the filters in case they are undefined
+        const availability = available_filter !== undefined ? available_filter : true;
+        const price_start = price_start_filter !== undefined ? price_start_filter : 0;
+        const price_end = price_end_filter !== undefined ? price_end_filter : 99990000; // Update end_filter to stable val
 
-// TO-DO: Develop a dynamic item filtering function
+        // Fetch the filtered url
+        const apires = await fetch(`https://sandbox.dev.clover.com/v3/merchants/${process.env.MID}/items?filter=available=${availability}&filter=price>=${price_start}&filter=price<=${price_end}&expand=categories`, options);
+        const data = await apires.json();
+        const items = data.elements || [];
 
-// app.get(`/filter-inventory/${options.data.elements.}`, (req, res) => {
+        // Define the return array
+        let ret_arr = [];
 
-// })
+        // Safeguard categories_filter
+        if (categories_filter === undefined || categories_filter === "all") {
+            ret_arr = items;
+        } else {
+            // Filter each item by its categories => elements[0] => name to the categories_filter
+            ret_arr = items.filter(item => item.categories.elements[0].name === categories_filter);
+        }
+
+        res.json({ message: "final return array", ret_arr });
+    } catch (error) {
+        console.log(error);
+        res.status(500).send("Error while fetching filtered items.");
+    }
+});
+
+// Api route to dynamically fetch individual products from inventory
+// TODO: FIX THIS!!
+app.get('/inventory/:id', async(req, res) => {
+    try {
+        const { id } = req.query;
+
+        const apires = await fetch(`https://sandbox.dev.clover.com/v3/merchants/${process.env.MID}/items?filter=id=${id}&expand=categories`, options);
+        const item = await apires.json();
+
+        res.json({message: "fetched item", item});
+    } catch (error) {
+        console.log(error);
+        res.status(500).send("Error while fetching individual item.");
+    }
+});
 
 // TO-DO: Create a backend pagination function
 
