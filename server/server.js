@@ -1,6 +1,7 @@
 import dotenv from "dotenv";
 import cors from "cors";
 import express from "express";
+import mysql from "mysql2";
 
 dotenv.config();
 
@@ -10,6 +11,13 @@ app.use(cors({
     origin: process.env.CLIENT_PATH,
     credentials: true
 }));
+
+const pool = mysql.createPool({
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASS,
+    database: 'sadboiz'
+}).promise();
 
 const options = {method: 'GET', headers: {authorization: `Bearer ${process.env.CLOVER_SK}`}};
 
@@ -30,6 +38,8 @@ app.get('/inventory', async (req, res) => {
         const price_start = price_start_filter !== undefined ? price_start_filter : 0;
         const price_end = price_end_filter !== undefined ? price_end_filter : 99990000; // Update end_filter to stable val
 
+        const categories = categories_filter !== undefined ? categories_filter : "all";
+
         // Fetch the filtered url
         const apires = await fetch(`https://sandbox.dev.clover.com/v3/merchants/${process.env.MID}/items?filter=available=${availability}&filter=price>=${price_start}&filter=price<=${price_end}&expand=categories`, options);
         const data = await apires.json();
@@ -39,11 +49,11 @@ app.get('/inventory', async (req, res) => {
         let ret_arr = [];
 
         // Safeguard categories_filter
-        if (categories_filter === undefined || categories_filter === "all") {
+        if (categories === "all") {
             ret_arr = items;
         } else {
             // Filter each item by its categories => elements[0] => name to the categories_filter
-            ret_arr = items.filter(item => item.categories.elements[0].name === categories_filter);
+            ret_arr = items.filter(item => item.categories.elements[0].name === categories);
         }
 
         res.json({ message: "final return array", ret_arr });
@@ -57,12 +67,20 @@ app.get('/inventory', async (req, res) => {
 // TODO: FIX THIS!!
 app.get('/inventory/:id', async(req, res) => {
     try {
-        const { id } = req.query;
+        const { id } = req.params;
 
-        const apires = await fetch(`https://sandbox.dev.clover.com/v3/merchants/${process.env.MID}/items?filter=id=${id}&expand=categories`, options);
+        const apires = await fetch(`https://sandbox.dev.clover.com/v3/merchants/${process.env.MID}/items/${id}?&expand=categories`, options);
         const item = await apires.json();
 
-        res.json({message: "fetched item", item});
+        const query = `SELECT * FROM product WHERE clover_id = ?`;
+        const [dbData] = await pool.query(query, [id]);
+
+        console.log(dbData[0].clover_id);
+
+        res.json({
+            item: item,
+            content: dbData,
+        });
     } catch (error) {
         console.log(error);
         res.status(500).send("Error while fetching individual item.");

@@ -55,8 +55,9 @@ const Store = () => {
           {items.map((item) => (
             <ProductCard
               key={item.id}
+              id={item.id}
               name={item.name}
-              price={item.price / 100}
+              price={(item.price * 0.01).toFixed(2)}
               available={item.available}
             />
           ))}

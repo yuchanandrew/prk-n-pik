@@ -1,14 +1,19 @@
+import { Link } from "react-router-dom";
+
 interface ProductCardProps {
+  id: string;
   name: string;
-  price: number;
+  price: string;
   available: boolean;
 }
 
-const ProductCard = ({ name, price, available }: ProductCardProps) => {
+const ProductCard = ({ id, name, price, available }: ProductCardProps) => {
   return (
-    <div className="flex flex-col shadow-lg rounded bg-gray-200 space-y-6 w-3/4 justify-center p-2 hover-general">
-      <div>
-        <h2 className="text-center">{name}</h2>
+    <div className="flex flex-col shadow-lg rounded bg-gray-200 space-y-6 w-full justify-center py-8 hover-general">
+      <div className="flex justify-center items-center">
+        <Link to={`/item/${id}`} className="flex text-center">
+          {name}
+        </Link>
       </div>
       <div className="text-center">
         <p>${price}</p>
