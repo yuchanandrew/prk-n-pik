@@ -21,3 +21,31 @@ VALUES
 ("Q2YKTBQVAXFDE", "https://i.imgur.com/g205qid.jpeg", "Le Epic Moka isn't just a drink, it's a whole moodboard. Chocolatey, over-caffeinated, and clinging to 2012 Tumblr quotes like 'I'm just a girl, standing in front of a coffee, asking it to love me.' One sip and you're impulse-buying a scented candle called Sad Boi Autumn and re-downloading Pinterest. It's giving quirky, it's giving random, it's giving 'rawr means I love you in dinosaur.'"),
 ("SK1N6YXDVP85W", "https://i.imgur.com/g205qid.jpeg", "Le Epic Moka isn't just a drink, it's a whole moodboard. Chocolatey, over-caffeinated, and clinging to 2012 Tumblr quotes like 'I'm just a girl, standing in front of a coffee, asking it to love me.' One sip and you're impulse-buying a scented candle called Sad Boi Autumn and re-downloading Pinterest. It's giving quirky, it's giving random, it's giving 'rawr means I love you in dinosaur.'"),
 ("CDQX05SDSV3FC", "https://i.imgur.com/DvrCwH0.jpeg", "Sadboiz Classic is the OG emotional damage brew. Black as your Spotify Wrapped in November, bitter like your ex's passive-aggressive Instagram captions. One sip and you're staring out the window pretending you're in a 2007 indie film soundtrack, hoodie up, rain optional. It's giving 'sorry I'm just really bad at texting back' energy with a side of vague tweets at 2AM.");
+
+-- User table creation:
+
+CREATE TABLE users (
+    id INT PRIMARY KEY NOT NULL AUTO_INCREMENT,
+    first_name VARCHAR(255) NOT NULL,
+    last_name VARCHAR(255) NOT NULL,
+    hashed_pw VARCHAR(255) NOT NULL,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    phone VARCHAR(20) NOT NULL,
+    created_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE cart (
+    id INT PRIMARY KEY NOT NULL AUTO_INCREMENT,
+    user_id INT NOT NULL,
+    created_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES user(id)
+);
+
+CREATE TABLE cart_item (
+    cart_id INT NOT NULL,
+    clover_id VARCHAR(255) NOT NULL UNIQUE,
+    quantity INT NOT NULL DEFAULT 1,
+    added_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (cart_id) REFERENCES cart(id),
+    UNIQUE (cart_id, clover_id)
+);

@@ -2,6 +2,7 @@ import dotenv from "dotenv";
 import cors from "cors";
 import express from "express";
 import mysql from "mysql2";
+import bcrypt from "bcrypt";
 
 dotenv.config();
 
@@ -20,6 +21,8 @@ const pool = mysql.createPool({
 }).promise();
 
 const options = {method: 'GET', headers: {authorization: `Bearer ${process.env.CLOVER_SK}`}};
+
+{/* SECTION 1: INVENTORY */}
 
 app.get('/get-inventory', (req, res) => {
     fetch(`https://sandbox.dev.clover.com/v3/merchants/${process.env.MID}/items?expand=categories`, options)
@@ -64,19 +67,20 @@ app.get('/inventory', async (req, res) => {
 });
 
 // Api route to dynamically fetch individual products from inventory
-// TODO: FIX THIS!!
 app.get('/inventory/:id', async(req, res) => {
     try {
+        // Grabs the id from the request params
         const { id } = req.params;
 
+        // Get the api response from clover while filtering by id
         const apires = await fetch(`https://sandbox.dev.clover.com/v3/merchants/${process.env.MID}/items/${id}?&expand=categories`, options);
-        const item = await apires.json();
+        const item = await apires.json(); // Get the item by converting response into json format
 
+        // Database querying and retrieving product's supplementary components (image_url, description)
         const query = `SELECT * FROM product WHERE clover_id = ?`;
         const [dbData] = await pool.query(query, [id]);
 
-        console.log(dbData[0].clover_id);
-
+        // Convert outgoing response into json format with components item (clover response) and content (db response)
         res.json({
             item: item,
             content: dbData,
@@ -88,6 +92,36 @@ app.get('/inventory/:id', async(req, res) => {
 });
 
 // TO-DO: Create a backend pagination function
+
+{/* SECTION 2: USER REGISTRATION & AUTHENTICATION */}
+
+app.post("/register", async(req, res) => {
+    // Pull all input data from body
+    const { first_name, last_name, email, phone_number, plain_pw } = req.body;
+    const saltRounds = 10; // Initialize number of salt rounds for bcrypt
+
+    try {
+        // Generate the salt
+        const salt = await bcrypt.genSalt(saltRounds);
+
+        // Convert plain password to hashed password using generated salt
+        const hashed_pw = await bcrypt.hash(plain_pw, salt);
+
+        // INSERT INTO query to register new user into the database
+        const insert_query = `INSERT INTO users(first_name, last_name, hashed_pw, email, phone_number) VALUES (?, ?, ?, ?, ?)`;
+        const [result] = await pool.query(query, [first_name, last_name, hashed_pw, email, phone_number]);
+
+        // FOR DEBUGGING PURPOSES ONLY!
+        const [new_user] = await pool.query(`SELECT first_name, last_name, email, phone_number FROM users WHERE email = ?`, [email]);
+
+        res.status(201).json({
+            message: "User created successfully!"
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Error while creating user." });
+    }
+});
 
 const PORT = process.env.PORT;
 app.listen(PORT, () => console.log('Server running on port 3000.'));
