@@ -1,5 +1,9 @@
 import { Link } from "react-router-dom";
 
+{
+  /* TO-DO: Remove username and replace with email address */
+}
+
 const Login = () => {
   return (
     <div className="flex flex-col justify-center items-center space-y-6">
