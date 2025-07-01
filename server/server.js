@@ -95,6 +95,9 @@ app.get('/inventory/:id', async(req, res) => {
 
 {/* SECTION 2: USER REGISTRATION & AUTHENTICATION */}
 
+// JSON parsing middleware!
+app.use(express.json());
+
 app.post("/register", async(req, res) => {
     // Pull all input data from body
     const { first_name, last_name, email, phone_number, plain_pw } = req.body;
@@ -108,11 +111,11 @@ app.post("/register", async(req, res) => {
         const hashed_pw = await bcrypt.hash(plain_pw, salt);
 
         // INSERT INTO query to register new user into the database
-        const insert_query = `INSERT INTO users(first_name, last_name, hashed_pw, email, phone_number) VALUES (?, ?, ?, ?, ?)`;
-        const [result] = await pool.query(query, [first_name, last_name, hashed_pw, email, phone_number]);
+        const insert_query = `INSERT INTO users(first_name, last_name, hashed_pw, email, phone) VALUES (?, ?, ?, ?, ?)`;
+        const [result] = await pool.query(insert_query, [first_name, last_name, hashed_pw, email, phone_number]);
 
         // FOR DEBUGGING PURPOSES ONLY!
-        const [new_user] = await pool.query(`SELECT first_name, last_name, email, phone_number FROM users WHERE email = ?`, [email]);
+        const [new_user] = await pool.query(`SELECT first_name, last_name, email, phone FROM users WHERE email = ?`, [email]);
 
         res.status(201).json({
             message: "User created successfully!"
@@ -120,6 +123,52 @@ app.post("/register", async(req, res) => {
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: "Error while creating user." });
+    }
+});
+
+app.post("/login", async(req, res) => {
+    try {
+        // Pull email and plain_pw data from req.body
+        const { email, plain_pw } = req.body;
+
+        // Create the search_query for user
+        const search_query = `SELECT * FROM users WHERE email = ?`;
+
+        // Grab the resulting row
+        const [result] = await pool.query(search_query, [email]);
+
+        // TEST ONE: Is user even being pulled in correctly from pool?
+        // console.log("result:", result);
+
+        // If there is no result (404)
+        if (result.length === 0) {
+            res.status(404).json({ message: "User does not exist. "});
+        }
+
+        // Grab the hashed_pw from database
+        const result_password = result[0].hashed_pw;
+        
+        // TEST TWO: Is hashed password being retrieved properly?
+        // console.log("Retrieved password:", result_password);
+
+        // Check the password using bcrypt.compare()
+        const password_check = await bcrypt.compare(plain_pw, result_password);
+
+        // TEST THREE: Is plain_pw === hashed_pw?
+        // console.log("is plain_pw === hashed_pw??", password_check);
+
+        // This test helped me realize that promise<pending> means that await is needed prior
+
+        // If passwords align, log user in and set success status (200)
+        if (password_check === true) {
+            res.status(200).json({ message: "Successfully logged in!" });
+        } else {
+            // Else, send status (401)
+            res.status(401).json({ message: "Incorrect password." });
+        }
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Error while retrieving user." });
     }
 });
 

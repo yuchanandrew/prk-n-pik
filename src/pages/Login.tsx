@@ -1,22 +1,45 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
+import axios from "axios";
 
 {
   /* TO-DO: Remove username and replace with email address */
 }
 
 const Login = () => {
+  const [email_address, setEmailAddress] = useState("");
+  const [password, setPassword] = useState("");
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    try {
+      const response = await axios.post("http://localhost:3000/login", {
+        email: email_address,
+        plain_pw: password,
+      });
+
+      console.log("Status:", response.data.message);
+
+      alert("Successfully logged in!");
+    } catch (error) {
+      console.log(error);
+    }
+  };
   return (
     <div className="flex flex-col justify-center items-center space-y-6">
       <h2 className="heading">Login</h2>
       <div className="w-full max-w-lg">
-        <form className="bg-gray-200 p-6 rounded-xl">
+        <form onSubmit={handleLogin} className="bg-gray-200 p-6 rounded-xl">
           <div className="mb-4">
-            <label htmlFor="username">Username</label>
+            <label htmlFor="email_address">Email Address</label>
             <input
               className="input-field w-full py-2 px-3"
-              id="username"
-              type="text"
-              placeholder="Username"
+              id="email_address"
+              type="email"
+              value={email_address}
+              onChange={(e) => setEmailAddress(e.target.value)}
+              placeholder="john.doe@gmail.com"
             />
           </div>
           <div className="mb-4">
@@ -24,7 +47,9 @@ const Login = () => {
             <input
               className="input-field w-full py-2 px-3"
               id="password"
-              type="text"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
               placeholder="Password"
             />
           </div>
