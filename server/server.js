@@ -3,6 +3,7 @@ import cors from "cors";
 import express from "express";
 import mysql from "mysql2";
 import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
 
 dotenv.config();
 
@@ -145,8 +146,10 @@ app.post("/login", async(req, res) => {
             res.status(404).json({ message: "User does not exist. "});
         }
 
+        const user = result[0];
+
         // Grab the hashed_pw from database
-        const result_password = result[0].hashed_pw;
+        const result_password = user.hashed_pw;
         
         // TEST TWO: Is hashed password being retrieved properly?
         // console.log("Retrieved password:", result_password);
@@ -161,7 +164,39 @@ app.post("/login", async(req, res) => {
 
         // If passwords align, log user in and set success status (200)
         if (password_check === true) {
-            res.status(200).json({ message: "Successfully logged in!" });
+            const roles = Object.values(user.roles).filter(Boolean);
+            const accessToken = jwt.sign(
+                {
+                    "UserInfo": {
+                        "id": user.id,
+                        "roles": roles
+                    }
+                },
+                process.env.ACCESS_TOKEN_SECRET,
+                {expiresIn: '1h'}
+            );
+            
+            const refreshToken = jwt.sign(
+                {"id": user.id},
+                process.env.REFRESH_TOKEN_SECRET,
+                {expiresIn: '1d'}
+            )
+
+            user.refreshToken = refreshToken;
+
+            const result = await user.save();
+
+            const update_query = `UPDATE users SET refreshToken = ? WHERE email = ?`;
+            await pool.query(update_query, [refreshToken, email]);
+
+            res.cookie('jwt', refreshToken, {
+                httpOnly: true,
+                sameSite: 'None',
+                secure: true,
+                maxAge: 24 * 60 * 60 * 1000
+            });
+
+            res.status(200).json({ message: "Successfully logged in!", roles, accessToken });
         } else {
             // Else, send status (401)
             res.status(401).json({ message: "Incorrect password." });
