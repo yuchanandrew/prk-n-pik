@@ -164,31 +164,32 @@ app.post("/login", async(req, res) => {
 
         // If passwords align, log user in and set success status (200)
         if (password_check === true) {
-            const roles = Object.values(user.roles).filter(Boolean);
+            // Generate accessToken and sign with the user's id
             const accessToken = jwt.sign(
                 {
                     "UserInfo": {
                         "id": user.id,
-                        "roles": roles
+                        "first_name": user.first_name,
+                        "email": user.email,
+                        "phone": user.phone
                     }
                 },
                 process.env.ACCESS_TOKEN_SECRET,
                 {expiresIn: '1h'}
             );
             
+            // Generate a refreshToken with same credentials (refreshToken !== accessToken)
             const refreshToken = jwt.sign(
                 {"id": user.id},
                 process.env.REFRESH_TOKEN_SECRET,
                 {expiresIn: '1d'}
             )
-
-            user.refreshToken = refreshToken;
-
-            const result = await user.save();
-
+            
+            // Set the user's refreshToken to the generated token
             const update_query = `UPDATE users SET refreshToken = ? WHERE email = ?`;
             await pool.query(update_query, [refreshToken, email]);
 
+            // Send a cookie to the client-side to inform of user's refreshed authorization
             res.cookie('jwt', refreshToken, {
                 httpOnly: true,
                 sameSite: 'None',
@@ -196,7 +197,7 @@ app.post("/login", async(req, res) => {
                 maxAge: 24 * 60 * 60 * 1000
             });
 
-            res.status(200).json({ message: "Successfully logged in!", roles, accessToken });
+            res.status(200).json({ message: "Successfully logged in!", accessToken });
         } else {
             // Else, send status (401)
             res.status(401).json({ message: "Incorrect password." });
@@ -204,6 +205,77 @@ app.post("/login", async(req, res) => {
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: "Error while retrieving user." });
+    }
+});
+
+app.get("/profile", async(req, res) => {
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader) {
+        return res.status(401).json({ message: "Missing headers "});
+    }
+
+    const token = authHeader.split(" ")[1];
+
+    try {
+        const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+        res.status(200).json({ message: "Successfully decoded", user: decoded.UserInfo});
+    } catch (error) {
+        return res.status(500).json({ message: "Error with server" });
+    }
+});
+
+app.post("/logout", async(req, res) => {
+    try {
+        res.clearCookie('jwt', {
+            httpOnly: true,
+            sameSite: 'None',
+            secure: true
+        });
+
+        res.status(200).json({ message: "Successfully logged out!" });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Server error." });
+    }
+});
+
+{/* SECTION 3: JWT-BASED CART & SESSION-BASED CART */}
+
+app.get("/cart", async(req, res) => {
+    // Retrieves the token from header, which looks like:
+    // Header: {
+    //  Authorization: `Bearer ${accessToken}`
+    // }
+
+    const token = req.headers.authorization?.split(" ")[1];
+
+    try {
+        if (token) {
+            // User is the decoded token using jwt.verify with attribute UserInfo (as established in /login route)
+            const user = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET).UserInfo;
+
+            // Grab user_id from UserInfo
+            const user_id = user.id;
+
+            // Get the cart from the database
+            const get_query = `SELECT * FROM cart WHERE user_id = ?`;
+            const [result] = await pool.query(get_query, [user_id]);
+
+            // User_cart is either result or empty
+            const user_cart = result || [];
+
+            return res.status(200).json({ message: "user_cart retrieved!", cart: user_cart });
+        } else {
+            // Session_cart is either session's cart or empty cart
+            const session_cart = req.session.cart || [];
+
+            return res.status(200).json({ message: "session_cart retrieved!", cart: session_cart});
+        }
+    } catch (error) {
+        console.log(error);
+
+        res.status(500).json({ message: "An error occurred while retrieving cart." })
     }
 });
 

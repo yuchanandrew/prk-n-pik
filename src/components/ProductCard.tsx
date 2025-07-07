@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import AddtoCart from "./AddtoCart";
 
 interface ProductCardProps {
   id: string;
@@ -32,20 +33,30 @@ const ProductCard = ({ id, name, price, available }: ProductCardProps) => {
   }, []);
 
   return (
-    <div className="flex flex-col shadow-lg rounded bg-gray-200 space-y-6 w-full justify-center py-8 hover-general">
+    <div className="flex flex-col shadow-lg rounded bg-gray-200 space-y-6 w-full max-w-xs justify-center py-8 hover-general">
       <div className="flex justify-center items-center">
         <Link to={`/item/${id}`} className="flex text-center">
           {name}
         </Link>
       </div>
-      <div className="flex w-full h-auto justify-center">
-        <img src={dbProduct.image_url} alt={name} className="rounded p-4" />
+      <div className="flex w-full justify-center">
+        <Link to={`/item/${id}`} className="flex text-center">
+          {" "}
+          <img
+            src={dbProduct.image_url}
+            alt={name}
+            className="rounded p-4 object-cover w-64 h-64"
+          />
+        </Link>
       </div>
       <div className="text-center">
         <p>${price}</p>
       </div>
       <div className="text-center">
         <p>{available}</p>
+      </div>
+      <div className="flex justify-center">
+        <AddtoCart />
       </div>
     </div>
   );

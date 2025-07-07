@@ -36,9 +36,10 @@ CREATE TABLE users (
 
 CREATE TABLE cart (
     id INT PRIMARY KEY NOT NULL AUTO_INCREMENT,
-    user_id INT NOT NULL,
+    user_id INT DEFAULT NULL,
+    session_id VARCHAR(255) DEFAULT NULL,
     created_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES user(id)
+    FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
 CREATE TABLE cart_item (

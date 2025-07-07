@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
+import AddtoCart from "../components/AddtoCart";
 
 interface ProductProperties {
   id: string;
@@ -51,15 +52,11 @@ const ProductPage = () => {
         />
       </div>
       <div className="flex flex-col bg-gray-200 w-full items-center space-y-6 lg:w-1/2">
-        <h2 className="subheading flex">{item.name}</h2>
+        <h2 className="subheading flex mt-4">{item.name}</h2>
         <p className="flex">${(item.price / 100).toFixed(2)}</p>
         <p className="flex w-11/12">{content.description}</p>
         <p className="flex subheading">Free pickup in store</p>
-        <div className="flex w-11/12">
-          <button className="subheading hover-primary w-full py-5">
-            Add to Cart
-          </button>
-        </div>
+        <AddtoCart />
       </div>
     </div>
   );
